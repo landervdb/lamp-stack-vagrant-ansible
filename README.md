@@ -1,159 +1,152 @@
-# Verslag LAMP Stack
+# LAMP Stack with CentOS 7, Vagrant and Ansible
 
-Auteur: Lander
+Author: Lander Van den Bulcke
 
-## Benodigde software
+Disclaimer: This was made as a school assignment. Therefore, no guarantees in terms of quality/functionality. ;)
 
-### Lokale omgeving
+## Software required
+
+### Local environment
 
 - Vagrant
 - VirtualBox
 - vagrant-guest_ansible
   - `vagrant plugin install vagrant-guest_ansible`
-- Onder Linux/MacOS: ansible
+- For Linux/MacOS: ansible
 
-### Cloud omgeving
+### Cloud environment
 
 - Packer
-- DigitalOcean account met API-key en voldoende credits ($0.01 volstaat normaal gezien)
+- DigitalOcean account with API-key and sufficient credits ($0.01 should be enough to build the image)
 
-## Werkwijze nieuwe machine opstarten
+## Procedure to start a new system
 
-### Lokale omgeving
+### Local environment
 
-- Zorg ervoor dat de benodigde software geïnstalleerd is.
-- Pas de variabelen aan naar wens in `ansible/playbook.yml` (zie onder)
-- Plaats de gewenste webapplicatie onder `www/html/`
-- Download de juiste base box met `vagrant box add bento/centos-7.3 --provider virtualbox`
-- Voer `vagrant up` uit en laat de provisioning zijn werk doen
-- Eens de machine opgestart is is de applicatie bereikbaar via het IP-adres `192.168.33.10`
-- Andere nuttige commando's:
-  - `vagrant halt`: Machine afsluiten
-  - `vagrant reload`: Machine herstarten
-  - `vagrant provision`: Provisioning opnieuw uitvoeren
-  - `vagrant destroy`: Machine verwijderen
+- Make sure the required software is installed
+- If required, edit the variables in `ansible/playbook.yml` (see below)
+- Put your web application in  `www/html/`
+- Download the correct base box with `vagrant box add bento/centos-7.3 --provider virtualbox`
+- Start the VM with `vagrant up`.
+- Once the VM has booted, your application will be available with IP address  `192.168.33.10`
+
+Other useful commands:
+- `vagrant halt`: Stop VM
+- `vagrant reload`: Restart VM
+- `vagrant provision`: Execute the provisioning again
+- `vagrant destroy`: Delete VM
 
 ### Digital Ocean
 
-Om een snapshot aan te maken:
-- Maak een API key aan
-  - Ga in Digital Ocean naar API > Generate new token
-  - Voer in (Git) bash uit: `export DIGITALOCEAN_API_TOKEN=xxxx` met het gegenereerde token in plaats van `xxxx`
-  - Eventueel kan je bovenstaande lijn in `~/.bashrc` zetten zodat je dit niet elke keer je bash heropstart moet doen
-- Zorg ervoor dat packer geïnstalleerd is
-- Plaats de gewenste webapplicatie onder `www/html/`
-- Voer `packer build packer.json` uit en laat het script zijn werk doen
-- Er is nu een snapshot aangemaakt onder Images > Snapshots op DO
+To create a snapshot:
+- Acquire an API-key
+  - Go in Digital Ocean to API > Generate new token
+  - Execute in bash: `export DIGITALOCEAN_API_TOKEN=xxxx` where `xxxx` is your generated token
+  - Optionally you can put the line above in `~/.bashrc` to persist this environment variable.
+- Make sure Packer is installed
+- Put your web application in `www/html/`
+- Execute `packer build packer.json`
+- A snapshot has been created under Images > Snapshots on DO
 
-Om een node op te starten
-- Ga naar Images > Snapshots op Digital Ocean
-- Klik bij het gewenste snapshot op More > Create droplet
-- Kies een gewenste droplet size (de $5 droplet volstaat normaal gezien)
-- Kies een datacenter (bvb Amsterdam 2)
-- Voeg eventueel je publieke ssh key toe onder "Add SSH Keys". Op die manier heb je vanaf je lokale machine root-access over ssh.
-- Kies eventueel een andere hostname
-- Klik op create
-- Nadat de node is opgestart is de webapplicatie bereikbaar op het toegewezen ip-adres
-- De node is bereikbaar over ssh met `ssh root@xxx.xxx.xxx.xxx` met `xxx.xxx.xxx.xxx` het toegewezen ip-adres, op voorwaarde dat je je publieke key toevoegde aan de node.
+To start a new node
+- Go to Images > Snapshots on Digital Ocean
+- Choose the desired snapshot and click More > Create droplet
+- Choose the desired droplet size (the $5 droplet should suffice)
+- Choose the desired datacenter
+- Add your public SSH key under "Add SSH Keys" in order to obtain root-access through SSH.
+- Optionally, choose a different hostname.
+- Click create
+- After the node has booted, your application will be available with the indicated IP address.
+- If you added your SSH key, you can reach your node with `ssh root@xxx.xxx.xxx.xxx`.
 
-## Gebruikte variabelen
+## Variables
 
-Deze variabelen dienen een waarde te worden gegeven in `ansible/playbook.yml`
-onder de `vars`-sectie.
+These variables should be edited in `ansible/playbook.yml` in the `vars` section.
 
 ### Role: init
 
-- `install_packages`: Lijst van extra packages die moeten geïnstalleerd worden
+- `install_packages`: List of packages to be installed
 
 ### Role: httpd
 
-- `server_name`: De servernaam die gebruikt wordt in de Apache configuratie
-- `server_admin`: Emailadres van de server admin
-- `document_root`: De directory waar de php-applicatie zich bevindt.
+- `server_name`: The Apache server name
+- `server_admin`: Server admin email
+- `document_root`: Apache document root. **Warning:** this script might break if you change this!
 
 ### Role: mariadb
 
-- `mariadb_root_password`: Wachtwoord voor de MySQL root user
-- `mariadb_databases`: Lijst van databases die moeten worden aangemaakt
-- `mariadb_users`: Lijst van MySQL users die moeten worden aangemaakt
-  - `name`: De naam van de user
-  - `password`: Wachtwoord voor de gebruiker
-  - `priv`: Rechten die de gebruiker krijgt (vb: `een_test_database.*:ALL,GRANT`)
+- `mariadb_root_password`: MariaDB root password
+- `mariadb_databases`: List of databases to be created
+- `mariadb_users`: List of  MariaDB users to be created
+  - `name`: Username
+  - `password`: Password
+  - `priv`: User privileges (ex.: `een_test_database.*:ALL,GRANT`)
 
-## Uitleg Ansible roles
+## Explanation Ansible roles
 
 ### Role: init
 
-Deze rol wordt gebruikt om enkele algemene dingen te installeren en configureren.
-In het bijzonder wordt de firewall service gestart en wordt een lijst van extra
-packages (`vim`, `wget`, ...) geïnstalleerd.
+Role to install and configure generic things. Starts the firewall, installs generic packages (`vim`, `wget`, ...), etc.
 
 ### Role: sepolicy
 
-Deze rol maakt een nieuwe SELinux policy aan. Deze is nodig omdat op de
-Vagrant-omgeving de `/var/www`-folder die de webapplicatie bevat gemount wordt
-door VirtualBox. Deze gesynchroniseerde mappen ondersteunen het niet om
-gerelabeld te worden, en beschikken standaard om een ander label dan nodig is om
-leesbaar te zijn door Apache. Hierdoor kan Apache met de default configuratie
-niet aan de bestanden van de webapplicatie wanneer SELinux op enforcing staat.
-Deze nieuwe policy geeft Apache leesrechten op bestanden met het label dat
-VirtualBox toekent.
+Creates a new SELinux policy. This is required since under vagrant the `/var/www` folder is mounted by VirtualBox. These synced folders do not support relabeling files, and by default have another label than the one required by Apache. Therefore, Apache can't read these files when SELinux is set to `enforcing`. This policy grants Apache read rights on files with the default VirtualBox label.
 
 ### Role: httpd
 
-Installeert en configureert Apache.
+Installs and configures Apache.
 
 - `install.yml`
-  - Installeert apache.
+  - Installs Apache
 - `configure.yml`
-  - Configureert een virtual host die naar de gewenste document root wijst.
-  - Stelt de globale servernaam in in de Apache config
-  - Stelt SELinux in
-  - Start Apache
+  - Configures a virtual host pointing to the required document root.
+  - Sets the global server name
+  - Configures SELinux  
+  - Starts Apache
 - `secure.yml`
-  - Stelt de firewall in om HTTP-verkeer door te laten.
+  - Configures the firewall to allow HTTP-traffic
 
 ### Role: php
 
-Installeert php en enkele modules, en herstart Apache.
+Installs php and some modules, and restarts Apache.
 
 ### Role: mariadb
 
-Installeert en configureert MariaDB.
+Installs and configures MariaDB.
 
 - `install.yml`
-  - Installeert MariaDB
-  - Start MariaDB
+  - Installs MariaDB
+  - Starts MariaDB
 - `configure.yml`
-  - Stelt de firewall in om poort 3306 toe te laten
-  - Maakt de gevraagde databases aan
-  - Maakt de gevraagde gebruikers aan
+  - Configures the firewall to allox traffic on port 3306
+  - Creates the required databases
+  - Creates the required users
 - `secure.yml`
-  - Stelt een wachtwoord in voor de root gebruiker
-  - Verwijdert eventuele anonieme gebruikers
-  - Verwijdert de standaard testdatabase
+  - Configures a root password
+  - Deletes anonymous users
+  - Deletes the default test database
 
-### Role: phpmyadmin
+### Role: phpMyAdmin
 
-Installeert en configureert phpmyadmin.
+Installs and configures phpMyAdmin.
 
-- Installeert de `epel-release` repo, deze is benodigd om phpmyadmin via `yum` te installeren
-- Installeert phpmyadmin
-- Kopieert een geschickt configuratiebestand naar de apache configuratiefolder zodat phpmyadmin te bereiken valt via de webserver.
+- Adds the `epel-release` repo. This is required to install phpMyAdmin using `yum`
+- Installs phpMyAdmin
+- Copies a configuration file to the Apache configuration folder in order for phpMyAdmin to be reachable through Apache.
 
-## Uitleg Vagrantfile
+## Explanation Vagrantfile
 
 ```ruby
 config.vm.box = "centos/7"
 ```
 
-Kiest de basisbox: CentOS 7
+Chooses the base box: CentOS 7
 
 ```ruby
 config.vm.network "private_network", ip: "192.168.33.10"
 ```
 
-Wijst een ip-adres toe aan de machine
+Assign an IP address to the VM
 
 ```ruby
 if Vagrant::Util::Platform.windows?
@@ -169,12 +162,12 @@ else
 end
 ```
 
-- In het geval dat Vagrant op een Windows machine wordt uitgevoerd
-  - Voeg de `epel-release` repo die ansible bevat toe aan de machine
-  - Installeer `ansible` op de virtuele machine
-  - Voer het ansible-playbook uit op de virtuele machine
-- In het geval dat Vagrant op een OS dat ansible wel ondersteunt wordt uitgevoerd
-  - Voer ansible lokaal uit
+- In case of a Windows host machine
+  - Add `epel-release` repo that contains Ansible to the VM
+  - Install Ansible on the VM
+  - Run the playbook locally on the VM
+- In case of other OS
+  - Run ansible on the host
 
 
 ```ruby
@@ -182,14 +175,9 @@ config.vm.synced_folder "./www/html", "/var/www/html", type: "virtualbox"
 config.vm.provision "shell", inline: "sudo mount -t vboxsf -o uid=`id -u apache`,gid=`id -g apache`,dmode=775,fmode=664 var_www_html /var/www/html"
 ```
 
-Mount de lokale map met de webapplicatie op de virtuele machine. Om Apache
-correct te laten werken moeten deze bestanden aan user `apache:apache` toebehoren.
-Echter, aangezien het mounten gebeurt voor de provisioning door ansible bestaat
-deze user nog niet. We mounten dus eerst zonder user op te geven, en voeren dan
-na de ansible-provisioning een commando uit dat de map hermount met de correcte
-user en group.
+Mount the local folder with the webappliction to the VM. In order for Apache to operate correctly, these files should belong to "apche:apache". However, since the mounting occurs before the Ansible provisioning, this user doesn't exist yet. As a workaround, we first mount the folder without providing a specific user, and then remount it correctly after the provisioning has completed.
 
-## Uitleg packer.json
+## Explanation packer.json
 
 ```json
 {
@@ -198,7 +186,8 @@ user en group.
 }
 ```
 
-Installeer ansible op de node.
+Install ansible on the node.
+
 
 ```json
 {
@@ -208,7 +197,7 @@ Installeer ansible op de node.
 }
 ```
 
-Voer het ansible playbook uit.
+Execute the Ansible playbook.
 
 ```json
 {
@@ -226,11 +215,10 @@ Voer het ansible playbook uit.
 }
 ```
 
-Kopieer de webapplicatie naar de `/tmp`-folder op de node. Daarna verplaatsen
-we de bestanden naar `/var/www`, geven we ze de juiste user en group, en
-het juiste label voor SELinux.
+Copy the web application to the `/tmp`-folder on the node. Afterwards, transfer the files to `/var/www` with the correct user, group and SELinux label.
 
-## Bronnen
+
+## Sources
 
 - https://seven.centos.org/2016/12/updated-centos-vagrant-images-available-v1611-01/
 - https://github.com/skecskes/vagrant-centos7-ansible-lamp
