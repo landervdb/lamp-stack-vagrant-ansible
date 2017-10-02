@@ -1,0 +1,5 @@
+---
+# defaults file for mariadb
+mariadb_root_password: toor
+mariadb_databases:
+mariadb_users:

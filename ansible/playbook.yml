@@ -1,0 +1,35 @@
+---
+  - hosts: all
+    become: true
+    vars:
+      # Installeer de hier opgelijste packages:
+      install_packages:
+        - git
+        - wget
+        - vim
+      # Apache instellingen
+      server_name: localhost
+      server_admin: webmaster@localhost
+      document_root: /var/www/html
+      # Database instellingen
+      # Wachtwoord root gerbuiker
+      mariadb_root_password: KY['q&s?4A#RqN5s
+      # Lijst van databases die moeten aangemaakt worden
+      mariadb_databases:
+        - een_test_database
+        - wordpress_demo
+      # Lijst van aan te maken database users, hun wachtwoord en hun rechten
+      mariadb_users:
+        - name: test
+          password: R3;CxQ_'cvrKuu4&
+          priv: "een_test_database.*:ALL,GRANT"
+        - name: wordpress_demo
+          password: J4f%=-EwYw26#&<t
+          priv: "wordpress_demo.*:ALL,GRANT"
+    roles:
+      - init
+      - sepolicy
+      - httpd
+      - php
+      - mariadb
+      - phpmyadmin

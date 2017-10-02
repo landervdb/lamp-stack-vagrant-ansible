@@ -1,0 +1,22 @@
+- name: Configure Apache VHost
+  template:
+    src: default.tpl
+    dest: /etc/httpd/conf.d/000-default.conf
+
+- name: Set global ServerName for Apache
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    line: "ServerName {{ server_name }}"
+
+- name: Make sure SELinux is in enforcing mode
+  selinux:
+    policy: targeted
+    state: enforcing
+  notify:
+    - restart httpd
+
+- name: Ensure Apache running
+  service:
+    name: httpd
+    state: started
+    enabled: yes

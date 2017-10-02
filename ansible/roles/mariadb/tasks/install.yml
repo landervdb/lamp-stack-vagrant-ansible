@@ -1,0 +1,15 @@
+# installation of mariadb
+- name: Install MariaDB
+  yum:
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - mariadb-server
+    - mariadb
+    - MySQL-python
+
+- name: Start MariaDB
+  service:
+    name: mariadb
+    state: started
+    enabled: true

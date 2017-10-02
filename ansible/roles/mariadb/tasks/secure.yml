@@ -1,0 +1,27 @@
+# secure the mariadb server
+- name: Set root MariaDB password
+  mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    priv: "*.*:ALL,GRANT"
+
+- name: Add .my.cnf file
+  template:
+    src: my.cnf
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host: '*'
+    state: absent
+
+- name: Remove test database
+  mysql_db:
+    name: test
+    state: absent
+  notify:
+    - restart mariadb

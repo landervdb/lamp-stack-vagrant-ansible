@@ -1,0 +1,16 @@
+- name: Allow public to use http service
+  firewalld:
+    zone: public
+    service: http
+    permanent: true
+    state: enabled
+
+- name: Allow public to port 80 in firewall
+  firewalld:
+    zone: public
+    port: 80/tcp
+    permanent: true
+    state: enabled
+
+- name: Flush iptables
+  shell: iptables -F

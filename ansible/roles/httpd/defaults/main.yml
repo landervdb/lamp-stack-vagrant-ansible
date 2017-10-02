@@ -1,0 +1,6 @@
+---
+# defaults file for httpd
+
+server_name: localhost
+server_admin: webmaster@localhost
+document_root: /opt/www/html

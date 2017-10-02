@@ -1,0 +1,44 @@
+{
+  "variables": {
+    "do_api_token": "{{ env `DIGITALOCEAN_API_TOKEN`}}"
+  },
+
+  "builders": [
+    {
+      "type": "digitalocean",
+      "api_token": "{{ user `do_api_token`}}",
+      "image": "centos-7-x64",
+      "region": "ams2",
+      "size": "512mb",
+      "ssh_username": "root",
+      "droplet_name": "lamp-stack-packer",
+      "snapshot_name": "build-with-packer-{{ timestamp }}"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["yum install epel-release -y", "yum install ansible -y"]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "ansible/playbook.yml",
+      "playbook_dir": "ansible",
+      "staging_directory": "/tmp/ansible"
+    },
+    {
+      "type": "file",
+      "source": "www",
+      "destination": "/tmp/"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "mv /tmp/www/html /var/www/",
+        "chown -R apache:apache /var/www",
+        "restorecon /var/www"
+      ]
+    }
+  ]
+}

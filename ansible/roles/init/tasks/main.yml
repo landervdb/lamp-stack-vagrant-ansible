@@ -1,0 +1,14 @@
+---
+# tasks file for init
+
+- name: Set up firewall
+  shell: systemctl enable firewalld
+
+- name: Start firewall
+  shell: systemctl start firewalld
+
+- name: Install basic packages
+  yum:
+    pkg: '{{ item }}'
+    state: installed
+  with_items: '{{ install_packages }}'

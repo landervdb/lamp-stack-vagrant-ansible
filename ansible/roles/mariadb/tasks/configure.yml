@@ -1,0 +1,24 @@
+# configuration of mariadb
+
+- name: Allow port 3306
+  firewalld:
+    zone: public
+    port: 3306/tcp
+    permanent: true
+    state: enabled
+  notify:
+    - restart mariadb
+
+- name: Create configured databases
+  mysql_db:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ mariadb_databases }}"
+
+- name: Add configured users
+  mysql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.priv }}"
+    state: present
+  with_items: "{{ mariadb_users }}"

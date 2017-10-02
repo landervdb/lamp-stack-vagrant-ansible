@@ -1,0 +1,5 @@
+---
+# tasks file for httpd
+- include: install.yml
+- include: configure.yml
+- include: secure.yml

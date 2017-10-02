@@ -1,0 +1,17 @@
+# install phpmyadmin
+- name: Install epel-release
+  yum:
+    pkg: epel-release
+    state: installed
+
+- name: Install phpMyAdmin
+  yum:
+    pkg: phpMyAdmin
+    state: installed
+
+- name: Configure phpMyAdmin
+  copy:
+    src: phpmyadmin.conf
+    dest: /etc/httpd/conf.d/phpMyAdmin.conf
+  notify:
+    - restart httpd

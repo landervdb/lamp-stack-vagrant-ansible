@@ -1,0 +1,36 @@
+---
+# tasks file for php
+
+- name: Enable SCL repo for php
+  yum:
+    pkg: centos-release-scl
+    state: installed
+
+- name: Install php
+  yum:
+    pkg: '{{ item }}'
+    state: installed
+  with_items:
+    - rh-php70
+    - rh-php70-php
+
+- name: Copy php configuration
+  command: 'cp {{ item.src }} {{ item.dest }}'
+  with_items:
+    - src: /opt/rh/httpd24/root/etc/httpd/conf.d/rh-php70-php.conf
+      dest: /etc/httpd/conf.d/
+    - src: /opt/rh/httpd24/root/etc/httpd/conf.modules.d/15-rh-php70-php.conf
+      dest: /etc/httpd/conf.modules.d/
+    - src: /opt/rh/httpd24/root/etc/httpd/modules/librh-php70-php7.so
+      dest: /etc/httpd/modules/
+
+- name: Install php modules
+  yum:
+    pkg: '{{ item }}'
+    state: installed
+  with_items:
+    - rh-php70-php-mysqlnd
+    - rh-php70-php-gd
+    - rh-php70-php-mbstring
+  notify:
+  - restart httpd
